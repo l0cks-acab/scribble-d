@@ -13,3 +13,6 @@ NeoForge 1.21.1 mod: whiteboards you can actually draw on.
 - Whiteboard x3: 3 iron nuggets over 6 white concrete.
 - Marker: stick + iron nugget + any dye (shapeless).
 - Board Eraser: stick + white wool (shapeless).
+
+## Marker model
+The 3D marker is built from a Meshy image-to-3D scan: `tools/marker_profile.py` measures the mesh's radius and colour along its length into `tools/marker_profile.json`, and `tools/marker_model.py` turns that into crossed cuboids (tip and cap tinted per colour).
