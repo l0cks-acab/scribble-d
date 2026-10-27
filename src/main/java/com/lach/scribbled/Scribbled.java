@@ -1,9 +1,12 @@
 package com.lach.scribbled;
 
 import com.lach.scribbled.net.ClearPayload;
+import com.lach.scribbled.net.FillPayload;
 import com.lach.scribbled.net.PaintPayload;
 import com.lach.scribbled.net.RestorePayload;
 import com.mojang.serialization.Codec;
+import java.util.ArrayList;
+import java.util.List;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
@@ -97,6 +100,12 @@ public class Scribbled {
                     WhiteboardBlockEntity be = b.at(ctx.player().level(), col, row);
                     if (be != null && be.clear()) be.sync();
                 }
+        });
+        r.playToServer(FillPayload.TYPE, FillPayload.STREAM_CODEC, (p, ctx) -> {
+            if (!reachable(ctx.player(), p.board())) return;
+            List<WhiteboardBlockEntity> changed = new ArrayList<>();
+            Fill.fill(ctx.player().level(), p.board(), p.ink(), p.point(), null, changed);
+            changed.forEach(WhiteboardBlockEntity::sync);
         });
         r.playToServer(RestorePayload.TYPE, RestorePayload.STREAM_CODEC, (p, ctx) -> {
             BlockPos pos = p.pos();

@@ -3,6 +3,9 @@ package com.lach.scribbled.client;
 import com.lach.scribbled.Board;
 import com.lach.scribbled.Canvas;
 import com.lach.scribbled.Drawing;
+import com.lach.scribbled.Fill;
+import com.lach.scribbled.net.FillPayload;
+import java.util.ArrayList;
 import com.lach.scribbled.MarkerItem;
 import com.lach.scribbled.Scribbled;
 import com.lach.scribbled.WhiteboardBlockEntity;
@@ -38,6 +41,8 @@ public class WhiteboardScreen extends Screen {
     private int pickerDrag;
     private EditBox hex;
     private int brush = 1;
+    /** Paint bucket selected instead of a brush. */
+    private boolean bucket;
     private float scale;
     private int left, top, spanW, spanH;
     private int paletteX, brushX;
@@ -67,7 +72,7 @@ public class WhiteboardScreen extends Screen {
         paletteX = left - 2 * CELL - 10;
         brushX = left + spanW + 10;
         int toolsTop = Math.min(top, height - 9 * CELL - 4);
-        int by = toolsTop + BRUSHES.length * CELL + 6;
+        int by = toolsTop + (BRUSHES.length + 1) * CELL + 6;
         int bw = 2 * CELL + 6;
         pickerX = left + 4;
         pickerY = toolsTop;
@@ -172,19 +177,35 @@ public class WhiteboardScreen extends Screen {
         for (int i = 0; i < BRUSHES.length; i++) {
             int x = brushX, y = tt + i * CELL;
             int w = 2 * CELL + 6;
-            g.fill(x, y, x + w, y + CELL - 2, BRUSHES[i] == brush ? 0xFFFFFFFF : 0xFF303030);
+            g.fill(x, y, x + w, y + CELL - 2, !bucket && BRUSHES[i] == brush ? 0xFFFFFFFF : 0xFF303030);
             g.fill(x + 1, y + 1, x + w - 1, y + CELL - 3, 0xFF000000 | Canvas.BOARD_RGB);
             int d = Math.min(CELL - 6, BRUSHES[i] * 2), cy = y + (CELL - 2) / 2;
             g.fill(x + 5, cy - d / 2, x + 5 + d, cy - d / 2 + Math.max(1, d), color == 0 ? 0xFF9A9A9A : 0xFF000000 | slotRgb(color));
             g.drawString(font, String.valueOf(BRUSHES[i]), x + w - 10, y + 4, 0xFF505050, false);
         }
+        renderBucketButton(g, brushX, tt + BRUSHES.length * CELL, 2 * CELL + 6);
 
-        if (inCanvas(mx, my)) {
+        if (inCanvas(mx, my) && bucket) {
+            g.renderOutline(mx - 3, my - 3, 7, 7, 0x80000000);
+        } else if (inCanvas(mx, my)) {
             int px = (int) ((mx - left) / scale) - (brush - 1) / 2, py = (int) ((my - top) / scale) - (brush - 1) / 2;
             int bs = Math.max(2, Math.round(brush * scale));
             g.renderOutline(left + Math.round(px * scale), top + Math.round(py * scale), bs, bs, 0x80000000);
         }
         if (picker) renderPicker(g, mx, my, partial);
+    }
+
+    private void renderBucketButton(GuiGraphics g, int x, int y, int w) {
+        g.fill(x, y, x + w, y + CELL - 2, bucket ? 0xFFFFFFFF : 0xFF303030);
+        g.fill(x + 1, y + 1, x + w - 1, y + CELL - 3, 0xFF000000 | Canvas.BOARD_RGB);
+        int fill = color == 0 ? 0xFF9A9A9A : 0xFF000000 | slotRgb(color);
+        // tipped bucket: grey pail with a paint drip in the current colour
+        g.fill(x + 4, y + 4, x + 12, y + 12, 0xFF6B7078);
+        g.fill(x + 5, y + 5, x + 11, y + 11, 0xFFA9AEB5);
+        g.fill(x + 5, y + 5, x + 11, y + 7, fill);
+        g.fill(x + 11, y + 6, x + 14, y + 8, fill);
+        g.fill(x + 13, y + 8, x + 15, y + 13, fill);
+        g.drawString(font, "Fill", x + w - 22, y + 4, 0xFF505050, false);
     }
 
     private int pickerW() {
@@ -275,8 +296,18 @@ public class WhiteboardScreen extends Screen {
             int y = tt + i * CELL;
             if (mx >= brushX && my >= y && mx < brushX + 2 * CELL + 6 && my < y + CELL - 2) {
                 brush = BRUSHES[i];
+                bucket = false;
                 return true;
             }
+        }
+        int fy = tt + BRUSHES.length * CELL;
+        if (mx >= brushX && my >= fy && mx < brushX + 2 * CELL + 6 && my < fy + CELL - 2) {
+            bucket = !bucket;
+            return true;
+        }
+        if (bucket && inCanvas(mx, my) && (button == 0 || button == 1)) {
+            fillAt(pointAt(mx, my), button == 1 ? 0 : ink());
+            return true;
         }
         if (inCanvas(mx, my) && (button == 0 || button == 1)) {
             if (stroke != null) stroke.end();
@@ -333,6 +364,14 @@ public class WhiteboardScreen extends Screen {
         int x = Mth.clamp((int) ((mx - left) / scale), 0, board.pixelWidth() - 1);
         int y = Mth.clamp((int) ((my - top) / scale), 0, board.pixelHeight() - 1);
         return Canvas.pack(x, y);
+    }
+
+    private void fillAt(int point, int ink) {
+        if (minecraft == null || minecraft.level == null) return;
+        Map<BlockPos, Drawing> before = new HashMap<>();
+        Fill.fill(minecraft.level, board, ink, point, before, new ArrayList<>());
+        UndoHistory.push(before);
+        PacketDistributor.sendToServer(new FillPayload(board, ink, point));
     }
 
     private void clearBoard() {

@@ -57,6 +57,21 @@ public class WhiteboardBlockEntity extends BlockEntity {
         return true;
     }
 
+    /** Sets the first {@code n} pixel indices to an ink (paint bucket). */
+    public boolean fillPixels(int ink, int[] indices, int n) {
+        if (!Canvas.validInk(ink) || n == 0) return false;
+        byte c = (byte) resolve(ink);
+        boolean changed = false;
+        for (int i = 0; i < n; i++) {
+            if (pixels[indices[i]] != c) {
+                pixels[indices[i]] = c;
+                changed = true;
+            }
+        }
+        if (changed) version++;
+        return changed;
+    }
+
     /** Palette index for an ink, adding it to the custom palette (or falling back to the nearest colour) if needed. */
     private int resolve(int ink) {
         if (ink == 0) return 0;
