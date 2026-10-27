@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "tools",
+  "group": "whiteboard_marker",
+  "ingredients": [
+    {
+      "item": "minecraft:stick"
+    },
+    {
+      "item": "minecraft:iron_nugget"
+    },
+    {
+      "item": "minecraft:magenta_dye"
+    }
+  ],
+  "result": {
+    "id": "scribbled:marker",
+    "count": 1,
+    "components": {
+      "scribbled:marker_color": 3
+    }
+  }
+}

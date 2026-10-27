@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "scribbled:item/marker",
+    "layer1": "scribbled:item/marker_tip"
+  }
+}

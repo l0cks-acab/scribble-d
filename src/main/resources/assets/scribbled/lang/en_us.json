@@ -1,0 +1,12 @@
+{
+  "block.scribbled.whiteboard": "Whiteboard",
+  "screen.scribbled.title": "Whiteboard",
+  "screen.scribbled.clear": "Clear",
+  "tooltip.scribbled.drawn": "Has a drawing",
+  "item.scribbled.marker": "Marker",
+  "item.scribbled.marker.colored": "%s Marker",
+  "item.scribbled.eraser": "Board Eraser",
+  "screen.scribbled.undo": "Undo",
+  "key.scribbled.undo": "Undo Whiteboard Stroke",
+  "key.categories.scribbled": "Scribble'd"
+}

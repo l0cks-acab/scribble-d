@@ -1,0 +1,68 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "scribbled:block/whiteboard_frame",
+    "frame": "scribbled:block/whiteboard_frame"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0.5,
+        12.5
+      ],
+      "to": [
+        13,
+        1.5,
+        14
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3,
+            0,
+            13,
+            1
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            1.5,
+            1
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            1.5,
+            1
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            3,
+            0,
+            13,
+            1.5
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            3,
+            0,
+            13,
+            1.5
+          ],
+          "texture": "#frame"
+        }
+      }
+    }
+  ]
+}
