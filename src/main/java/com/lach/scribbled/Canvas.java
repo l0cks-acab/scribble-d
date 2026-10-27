@@ -4,13 +4,15 @@ import java.util.List;
 import net.minecraft.world.item.DyeColor;
 
 /**
- * Palette-indexed pixel canvas helpers. Index 0 is bare board, 1-16 are the dye colours.
+ * Palette-indexed pixel canvas helpers. Index 0 is bare board, 1-16 are the dye colours, and 17+ point into the
+ * block's own custom palette. Strokes carry an "ink": 0 erases, anything else is opaque 0xFFRRGGBB.
  * Strokes use board-global coordinates packed as x | y << 16; each block draws the part that lands on it.
  */
 public final class Canvas {
     public static final int SIZE = 64;
     public static final int AREA = SIZE * SIZE;
     public static final int COLORS = 17;
+    public static final int MAX_CUSTOM = 256 - COLORS;
     public static final int MAX_BRUSH = 8;
     public static final int BOARD_RGB = 0xF4F4EE;
 
@@ -18,6 +20,15 @@ public final class Canvas {
 
     public static int rgb(int index) {
         return index <= 0 || index >= COLORS ? BOARD_RGB : DyeColor.byId(index - 1).getTextureDiffuseColor() & 0xFFFFFF;
+    }
+
+    /** Ink for a fixed palette index (0 = eraser). */
+    public static int ink(int index) {
+        return index <= 0 ? 0 : 0xFF000000 | rgb(index);
+    }
+
+    public static boolean validInk(int ink) {
+        return ink == 0 || ink >>> 24 == 0xFF;
     }
 
     public static int pack(int x, int y) {
@@ -33,8 +44,9 @@ public final class Canvas {
     }
 
     /** Draws a polyline onto the block whose top-left pixel sits at (ox, oy); returns whether any pixel changed. */
-    public static boolean stroke(byte[] px, int color, int size, List<Integer> points, int ox, int oy) {
-        if (points.isEmpty() || color < 0 || color >= COLORS) return false;
+    /** Whether a stroke could land on the block whose top-left pixel sits at (ox, oy). */
+    public static boolean touches(int size, List<Integer> points, int ox, int oy) {
+        if (points.isEmpty()) return false;
         size = Math.max(1, Math.min(MAX_BRUSH, size));
         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
         for (int p : points) {
@@ -43,8 +55,13 @@ public final class Canvas {
             minY = Math.min(minY, y(p));
             maxY = Math.max(maxY, y(p));
         }
-        if (maxX + size < ox || minX - size >= ox + SIZE || maxY + size < oy || minY - size >= oy + SIZE) return false;
-        byte c = (byte) color;
+        return !(maxX + size < ox || minX - size >= ox + SIZE || maxY + size < oy || minY - size >= oy + SIZE);
+    }
+
+    public static boolean stroke(byte[] px, int index, int size, List<Integer> points, int ox, int oy) {
+        if (!touches(size, points, ox, oy) || index < 0 || index > 255) return false;
+        size = Math.max(1, Math.min(MAX_BRUSH, size));
+        byte c = (byte) index;
         int x0 = x(points.get(0)) - ox, y0 = y(points.get(0)) - oy;
         boolean changed = dab(px, x0, y0, size, c);
         for (int i = 1; i < points.size(); i++) {

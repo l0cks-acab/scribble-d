@@ -12,16 +12,8 @@ import net.minecraft.resources.ResourceLocation;
 
 /** One dynamic texture per loaded board, re-uploaded when the board's version moves. */
 public final class BoardTextures {
-    private static final int[] ABGR = new int[Canvas.COLORS];
     private static final Map<WhiteboardBlockEntity, Entry> ENTRIES = new IdentityHashMap<>();
     private static int nextId;
-
-    static {
-        for (int i = 0; i < Canvas.COLORS; i++) {
-            int rgb = Canvas.rgb(i);
-            ABGR[i] = 0xFF000000 | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | rgb >> 16 & 0xFF;
-        }
-    }
 
     private BoardTextures() {}
 
@@ -35,10 +27,12 @@ public final class BoardTextures {
             e.version = be.version();
             NativeImage img = e.texture.getPixels();
             byte[] px = be.pixels();
-            for (int i = 0; i < Canvas.AREA; i++) {
-                int c = px[i];
-                img.setPixelRGBA(i % Canvas.SIZE, i / Canvas.SIZE, ABGR[c < 0 || c >= Canvas.COLORS ? 0 : c]);
+            int[] abgr = new int[256];
+            for (int i = 0; i < 256; i++) {
+                int rgb = be.rgb(i);
+                abgr[i] = 0xFF000000 | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | rgb >> 16 & 0xFF;
             }
+            for (int i = 0; i < Canvas.AREA; i++) img.setPixelRGBA(i % Canvas.SIZE, i / Canvas.SIZE, abgr[px[i] & 0xFF]);
             e.texture.upload();
         }
         return e.location;

@@ -1,6 +1,7 @@
 package com.lach.scribbled.client;
 
 import com.lach.scribbled.Board;
+import com.lach.scribbled.Canvas;
 import com.lach.scribbled.MarkerItem;
 import com.lach.scribbled.Scribbled;
 import com.lach.scribbled.WhiteboardBlock;
@@ -42,7 +43,7 @@ public final class MarkerDrawing {
             Board board = Board.find(mc.level, hit.getBlockPos());
             if (board == null) return;
             int size = eraser ? ERASER_SIZE : mc.player.isShiftKeyDown() ? FINE_SIZE : MARKER_SIZE;
-            session = new StrokeSession(board, eraser ? 0 : MarkerItem.color(held), size);
+            session = new StrokeSession(board, eraser ? 0 : Canvas.ink(MarkerItem.color(held)), size);
         }
         session.add(session.board().pixelAt(hit.getBlockPos(), hit.getLocation()));
     }

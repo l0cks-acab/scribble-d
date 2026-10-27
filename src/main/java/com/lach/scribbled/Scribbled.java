@@ -86,7 +86,7 @@ public class Scribbled {
             for (int row = 0; row < b.height(); row++)
                 for (int col = 0; col < b.width(); col++) {
                     WhiteboardBlockEntity be = b.at(ctx.player().level(), col, row);
-                    if (be != null && be.paint(p.color(), p.size(), p.points(), col * Canvas.SIZE, row * Canvas.SIZE)) be.sync();
+                    if (be != null && be.paint(p.ink(), p.size(), p.points(), col * Canvas.SIZE, row * Canvas.SIZE)) be.sync();
                 }
         });
         r.playToServer(ClearPayload.TYPE, ClearPayload.STREAM_CODEC, (p, ctx) -> {
@@ -102,7 +102,7 @@ public class Scribbled {
             BlockPos pos = p.pos();
             Board one = Board.find(ctx.player().level(), pos);
             if (one == null || !reachable(ctx.player(), new Board(pos, one.facing(), 1, 1))) return;
-            if (ctx.player().level().getBlockEntity(pos) instanceof WhiteboardBlockEntity be && be.restore(p.pixels())) be.sync();
+            if (ctx.player().level().getBlockEntity(pos) instanceof WhiteboardBlockEntity be && be.restore(p.drawing())) be.sync();
         });
     }
 

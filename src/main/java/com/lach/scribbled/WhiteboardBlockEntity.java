@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class WhiteboardBlockEntity extends BlockEntity {
     private byte[] pixels = new byte[Canvas.AREA];
+    /** RGB of palette indices 17 and up. */
+    private int[] palette = new int[0];
     private boolean glowing;
     /** Bumped on every pixel change so client textures know to re-upload. */
     private int version;
@@ -26,6 +28,13 @@ public class WhiteboardBlockEntity extends BlockEntity {
 
     public byte[] pixels() {
         return pixels;
+    }
+
+    /** RGB of a pixel's palette index. */
+    public int rgb(int index) {
+        index &= 0xFF;
+        int c = index - Canvas.COLORS;
+        return c >= 0 && c < palette.length ? palette[c] : Canvas.rgb(index);
     }
 
     public int version() {
@@ -41,22 +50,73 @@ public class WhiteboardBlockEntity extends BlockEntity {
         return true;
     }
 
-    public boolean paint(int color, int size, List<Integer> points, int ox, int oy) {
-        if (!Canvas.stroke(pixels, color, size, points, ox, oy)) return false;
+    public boolean paint(int ink, int size, List<Integer> points, int ox, int oy) {
+        if (!Canvas.validInk(ink) || !Canvas.touches(size, points, ox, oy)) return false;
+        if (!Canvas.stroke(pixels, resolve(ink), size, points, ox, oy)) return false;
         version++;
         return true;
+    }
+
+    /** Palette index for an ink, adding it to the custom palette (or falling back to the nearest colour) if needed. */
+    private int resolve(int ink) {
+        if (ink == 0) return 0;
+        int rgb = ink & 0xFFFFFF;
+        for (int i = 1; i < Canvas.COLORS; i++) if (Canvas.rgb(i) == rgb) return i;
+        for (int i = 0; i < palette.length; i++) if (palette[i] == rgb) return Canvas.COLORS + i;
+        if (palette.length >= Canvas.MAX_CUSTOM) compact();
+        if (palette.length < Canvas.MAX_CUSTOM) {
+            palette = Arrays.copyOf(palette, palette.length + 1);
+            palette[palette.length - 1] = rgb;
+            return Canvas.COLORS + palette.length - 1;
+        }
+        int best = 1, bestDist = Integer.MAX_VALUE;
+        for (int i = 1; i < Canvas.COLORS + palette.length; i++) {
+            int c = rgb(i), dr = (c >> 16 & 255) - (rgb >> 16 & 255), dg = (c >> 8 & 255) - (rgb >> 8 & 255), db = (c & 255) - (rgb & 255);
+            int dist = dr * dr + dg * dg + db * db;
+            if (dist < bestDist) {
+                best = i;
+                bestDist = dist;
+            }
+        }
+        return best;
+    }
+
+    /** Drops custom colours no pixel uses any more and renumbers the rest. */
+    private void compact() {
+        boolean[] used = new boolean[palette.length];
+        for (byte b : pixels) {
+            int c = (b & 0xFF) - Canvas.COLORS;
+            if (c >= 0 && c < used.length) used[c] = true;
+        }
+        int[] remap = new int[palette.length];
+        int n = 0;
+        for (int i = 0; i < palette.length; i++) if (used[i]) {
+            remap[i] = n;
+            palette[n++] = palette[i];
+        }
+        palette = Arrays.copyOf(palette, n);
+        for (int k = 0; k < pixels.length; k++) {
+            int c = (pixels[k] & 0xFF) - Canvas.COLORS;
+            if (c >= 0) pixels[k] = (byte) (c < used.length && used[c] ? Canvas.COLORS + remap[c] : 0);
+        }
     }
 
     public boolean clear() {
-        if (isBlank()) return false;
+        if (isBlank() && palette.length == 0) return false;
         Arrays.fill(pixels, (byte) 0);
+        palette = new int[0];
         version++;
         return true;
     }
 
-    public boolean restore(byte[] snapshot) {
-        if (snapshot.length != Canvas.AREA || Arrays.equals(pixels, snapshot)) return false;
-        pixels = snapshot.clone();
+    public Drawing snapshot() {
+        return new Drawing(pixels, palette);
+    }
+
+    public boolean restore(Drawing snapshot) {
+        if (snapshot.equals(snapshot())) return false;
+        pixels = snapshot.copyPixels();
+        palette = snapshot.copyPalette();
         version++;
         return true;
     }
@@ -75,6 +135,7 @@ public class WhiteboardBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putByteArray("pixels", pixels);
+        tag.putIntArray("palette", palette);
         tag.putBoolean("glowing", glowing);
     }
 
@@ -82,6 +143,8 @@ public class WhiteboardBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("pixels")) pixels = Arrays.copyOf(tag.getByteArray("pixels"), Canvas.AREA);
+        int[] pal = tag.getIntArray("palette");
+        palette = Arrays.copyOf(pal, Math.min(pal.length, Canvas.MAX_CUSTOM));
         glowing = tag.getBoolean("glowing");
         version++;
     }
@@ -99,7 +162,7 @@ public class WhiteboardBlockEntity extends BlockEntity {
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
-        if (!isBlank()) components.set(Scribbled.DRAWING.get(), new Drawing(pixels));
+        if (!isBlank()) components.set(Scribbled.DRAWING.get(), snapshot());
     }
 
     @Override
@@ -108,6 +171,7 @@ public class WhiteboardBlockEntity extends BlockEntity {
         Drawing d = input.get(Scribbled.DRAWING.get());
         if (d != null) {
             pixels = d.copyPixels();
+            palette = d.copyPalette();
             version++;
         }
     }
@@ -116,6 +180,7 @@ public class WhiteboardBlockEntity extends BlockEntity {
     @SuppressWarnings("deprecation")
     public void removeComponentsFromTag(CompoundTag tag) {
         tag.remove("pixels");
+        tag.remove("palette");
     }
 
     @Override
