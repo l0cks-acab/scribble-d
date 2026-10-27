@@ -26,24 +26,6 @@
           ],
           "texture": "#frame"
         },
-        "east": {
-          "uv": [
-            0,
-            0,
-            1.5,
-            1
-          ],
-          "texture": "#frame"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            1.5,
-            1
-          ],
-          "texture": "#frame"
-        },
         "up": {
           "uv": [
             3,

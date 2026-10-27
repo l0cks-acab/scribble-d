@@ -1,0 +1,32 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "scribbled:block/whiteboard_frame",
+    "frame": "scribbled:block/whiteboard_frame"
+  },
+  "elements": [
+    {
+      "from": [
+        13,
+        0.5,
+        12.5
+      ],
+      "to": [
+        13.1,
+        1.5,
+        14
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            0,
+            1.5,
+            1
+          ],
+          "texture": "#frame"
+        }
+      }
+    }
+  ]
+}
