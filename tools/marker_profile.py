@@ -1,4 +1,4 @@
-"""Reads the Meshy marker OBJ + texture and prints a radius/colour profile along its long axis."""
+"""Reads the modeled marker OBJ + texture and prints a radius/colour profile along its long axis."""
 import sys, json, random
 import numpy as np
 from PIL import Image

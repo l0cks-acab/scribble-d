@@ -1,4 +1,4 @@
-"""Builds the 3D marker item model from a profile measured off the Meshy mesh (see marker_profile.py).
+"""Builds the 3D marker item model from a profile measured off the modeled mesh (see marker_profile.py).
 
 Each slice along the marker gets two crossed cuboids so it reads round; the whole marker is tilted 45 degrees
 like a tool sprite. Tip and cap use tintindex 1 so they take the marker's colour.

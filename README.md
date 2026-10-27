@@ -15,4 +15,4 @@ NeoForge 1.21.1 mod: whiteboards you can actually draw on.
 - Board Eraser: stick + white wool (shapeless).
 
 ## Marker model
-The 3D marker is built from a Meshy image-to-3D scan: `tools/marker_profile.py` measures the mesh's radius and colour along its length into `tools/marker_profile.json`, and `tools/marker_model.py` turns that into crossed cuboids (tip and cap tinted per colour).
+The 3D marker was modeled, then converted: `tools/marker_profile.py` measures the mesh's radius and colour along its length into `tools/marker_profile.json`, and `tools/marker_model.py` turns that into crossed cuboids (tip and cap tinted per colour).
