@@ -67,8 +67,8 @@ model = {
         'head': {'rotation': [0, 180, 0], 'translation': [0, 13, 7], 'scale': [1, 1, 1]},
         'thirdperson_righthand': {'rotation': [0, -90, 55], 'translation': [0, 4, 0.5], 'scale': [0.7, 0.7, 0.7]},
         'thirdperson_lefthand': {'rotation': [0, 90, -55], 'translation': [0, 4, 0.5], 'scale': [0.7, 0.7, 0.7]},
-        'firstperson_righthand': {'rotation': [0, -90, 25], 'translation': [1.13, 3.2, 1.13], 'scale': [0.5, 0.5, 0.5]},
-        'firstperson_lefthand': {'rotation': [0, 90, -25], 'translation': [1.13, 3.2, 1.13], 'scale': [0.5, 0.5, 0.5]},
+        'firstperson_righthand': {'rotation': [-55, -90, -145], 'translation': [1.13, 4.5, -1], 'scale': [0.45, 0.45, 0.45]},
+        'firstperson_lefthand': {'rotation': [-55, 90, 145], 'translation': [1.13, 4.5, -1], 'scale': [0.45, 0.45, 0.45]},
     },
 }
 json.dump(model, open(out_model, 'w'), indent=1)
