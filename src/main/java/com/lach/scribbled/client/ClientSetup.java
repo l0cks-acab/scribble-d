@@ -1,7 +1,5 @@
 package com.lach.scribbled.client;
 
-import com.lach.scribbled.Canvas;
-import com.lach.scribbled.MarkerItem;
 import com.lach.scribbled.Scribbled;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -18,8 +16,9 @@ import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
 public final class ClientSetup {
+    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Scribbled.id("main"));
     public static final KeyMapping UNDO = new KeyMapping("key.scribbled.undo", KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.scribbled");
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, CATEGORY);
 
     private ClientSetup() {}
 
@@ -32,12 +31,13 @@ public final class ClientSetup {
 
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {
+            event.registerCategory(CATEGORY);
             event.register(UNDO);
         }
 
         @SubscribeEvent
-        static void itemColors(RegisterColorHandlersEvent.Item event) {
-            event.register((stack, tint) -> tint == 1 ? 0xFF000000 | Canvas.rgb(MarkerItem.color(stack)) : -1, Scribbled.MARKER.get());
+        static void tintSources(RegisterColorHandlersEvent.ItemTintSources event) {
+            event.register(Scribbled.id("marker_color"), MarkerTint.MAP_CODEC);
         }
     }
 

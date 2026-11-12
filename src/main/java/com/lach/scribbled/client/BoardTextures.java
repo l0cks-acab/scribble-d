@@ -8,7 +8,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** One dynamic texture per loaded board, re-uploaded when the board's version moves. */
 public final class BoardTextures {
@@ -17,9 +17,9 @@ public final class BoardTextures {
 
     private BoardTextures() {}
 
-    public static ResourceLocation get(WhiteboardBlockEntity be) {
+    public static Identifier get(WhiteboardBlockEntity be) {
         Entry e = ENTRIES.computeIfAbsent(be, b -> {
-            Entry n = new Entry(new DynamicTexture(Canvas.SIZE, Canvas.SIZE, false), Scribbled.id("board/" + nextId++));
+            Entry n = new Entry(new DynamicTexture(() -> "scribbled board", Canvas.SIZE, Canvas.SIZE, false), Scribbled.id("board/" + nextId++));
             Minecraft.getInstance().getTextureManager().register(n.location, n.texture);
             return n;
         });
@@ -27,12 +27,9 @@ public final class BoardTextures {
             e.version = be.version();
             NativeImage img = e.texture.getPixels();
             byte[] px = be.pixels();
-            int[] abgr = new int[256];
-            for (int i = 0; i < 256; i++) {
-                int rgb = be.rgb(i);
-                abgr[i] = 0xFF000000 | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | rgb >> 16 & 0xFF;
-            }
-            for (int i = 0; i < Canvas.AREA; i++) img.setPixelRGBA(i % Canvas.SIZE, i / Canvas.SIZE, abgr[px[i] & 0xFF]);
+            int[] argb = new int[256];
+            for (int i = 0; i < 256; i++) argb[i] = 0xFF000000 | be.rgb(i);
+            for (int i = 0; i < Canvas.AREA; i++) img.setPixel(i % Canvas.SIZE, i / Canvas.SIZE, argb[px[i] & 0xFF]);
             e.texture.upload();
         }
         return e.location;
@@ -50,10 +47,10 @@ public final class BoardTextures {
 
     private static final class Entry {
         final DynamicTexture texture;
-        final ResourceLocation location;
+        final Identifier location;
         int version = Integer.MIN_VALUE;
 
-        Entry(DynamicTexture texture, ResourceLocation location) {
+        Entry(DynamicTexture texture, Identifier location) {
             this.texture = texture;
             this.location = location;
         }

@@ -1,6 +1,7 @@
 package com.lach.scribbled;
 
-import java.util.List;
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
@@ -14,8 +15,8 @@ public class WhiteboardItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext ctx, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         if (stack.has(Scribbled.DRAWING.get()))
-            tooltip.add(Component.translatable("tooltip.scribbled.drawn").withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("tooltip.scribbled.drawn").withStyle(ChatFormatting.GRAY));
     }
 }

@@ -11,7 +11,7 @@ import net.minecraft.network.codec.StreamCodec;
 
 /** Immutable snapshot of a block's pixels and custom palette: carried on items, and used for undo. */
 public final class Drawing {
-    private static final Codec<byte[]> BYTES = Codec.BYTE_BUFFER.xmap(b -> {
+    public static final Codec<byte[]> BYTES = Codec.BYTE_BUFFER.xmap(b -> {
         byte[] a = new byte[b.remaining()];
         b.get(a);
         return a;

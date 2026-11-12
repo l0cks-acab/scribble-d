@@ -12,7 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -46,12 +46,12 @@ public class Scribbled {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> MARKER_COLOR = COMPONENTS.registerComponentType("marker_color",
             b -> b.persistent(Codec.intRange(1, Canvas.COLORS - 1)).networkSynchronized(ByteBufCodecs.VAR_INT));
 
-    public static final DeferredBlock<WhiteboardBlock> BOARD = BLOCKS.registerBlock("whiteboard", WhiteboardBlock::new, WhiteboardBlock.PROPERTIES);
-    public static final DeferredItem<WhiteboardItem> BOARD_ITEM = ITEMS.registerItem("whiteboard", p -> new WhiteboardItem(BOARD.get(), p), new Item.Properties());
-    public static final DeferredItem<MarkerItem> MARKER = ITEMS.registerItem("marker", MarkerItem::new, new Item.Properties().stacksTo(1));
-    public static final DeferredItem<Item> ERASER = ITEMS.registerItem("eraser", Item::new, new Item.Properties().stacksTo(1));
+    public static final DeferredBlock<WhiteboardBlock> BOARD = BLOCKS.registerBlock("whiteboard", WhiteboardBlock::new, WhiteboardBlock::properties);
+    public static final DeferredItem<WhiteboardItem> BOARD_ITEM = ITEMS.registerItem("whiteboard", p -> new WhiteboardItem(BOARD.get(), p), p -> p.useBlockDescriptionPrefix());
+    public static final DeferredItem<MarkerItem> MARKER = ITEMS.registerItem("marker", MarkerItem::new, p -> p.stacksTo(1));
+    public static final DeferredItem<Item> ERASER = ITEMS.registerItem("eraser", Item::new, p -> p.stacksTo(1));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<WhiteboardBlockEntity>> BOARD_BE = BLOCK_ENTITIES.register("whiteboard",
-            () -> BlockEntityType.Builder.of(WhiteboardBlockEntity::new, BOARD.get()).build(null));
+            () -> new BlockEntityType<>(WhiteboardBlockEntity::new, BOARD.get()));
 
     public Scribbled(IEventBus modBus, ModContainer container) {
         BLOCKS.register(modBus);
@@ -63,8 +63,8 @@ public class Scribbled {
         LOGGER.info("{} loaded", MODID);
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MODID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MODID, path);
     }
 
     private static void creativeTabs(BuildCreativeModeTabContentsEvent event) {

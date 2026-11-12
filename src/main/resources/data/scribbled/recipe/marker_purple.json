@@ -3,15 +3,9 @@
   "category": "tools",
   "group": "whiteboard_marker",
   "ingredients": [
-    {
-      "item": "minecraft:stick"
-    },
-    {
-      "item": "minecraft:iron_nugget"
-    },
-    {
-      "item": "minecraft:purple_dye"
-    }
+    "minecraft:stick",
+    "minecraft:iron_nugget",
+    "minecraft:purple_dye"
   ],
   "result": {
     "id": "scribbled:marker",

@@ -12,7 +12,10 @@ import com.lach.scribbled.WhiteboardBlockEntity;
 import com.lach.scribbled.net.ClearPayload;
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,7 +23,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -149,10 +152,10 @@ public class WhiteboardScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partial) {
-        super.render(g, mx, my, partial);
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float partial) {
+        super.extractRenderState(g, mx, my, partial);
         if (minecraft == null || minecraft.level == null) return;
-        g.drawCenteredString(font, title, width / 2, top - 14, 0xFFFFFF);
+        g.centeredText(font, title, width / 2, top - 14, 0xFFFFFFFF);
         g.fill(left - 3, top - 3, left + spanW + 3, top + spanH + 3, 0xFF8A8F96);
         g.fill(left - 2, top - 2, left + spanW + 2, top + spanH + 2, 0xFFC9CDD2);
         for (int row = 0; row < board.height(); row++)
@@ -161,7 +164,7 @@ public class WhiteboardScreen extends Screen {
                 int y0 = top + Math.round(row * Canvas.SIZE * scale), y1 = top + Math.round((row + 1) * Canvas.SIZE * scale);
                 WhiteboardBlockEntity be = board.at(minecraft.level, col, row);
                 if (be == null) g.fill(x0, y0, x1, y1, 0xFF3A3A3A);
-                else g.blit(BoardTextures.get(be), x0, y0, x1 - x0, y1 - y0, 0, 0, Canvas.SIZE, Canvas.SIZE, Canvas.SIZE, Canvas.SIZE);
+                else g.blit(RenderPipelines.GUI_TEXTURED, BoardTextures.get(be), x0, y0, 0, 0, x1 - x0, y1 - y0, Canvas.SIZE, Canvas.SIZE, Canvas.SIZE, Canvas.SIZE);
             }
 
         int tt = toolsTop();
@@ -169,7 +172,7 @@ public class WhiteboardScreen extends Screen {
             int x = paletteX + (i % 2) * CELL, y = tt + (i / 2) * CELL;
             g.fill(x, y, x + CELL - 2, y + CELL - 2, i == color ? 0xFFFFFFFF : 0xFF303030);
             g.fill(x + 1, y + 1, x + CELL - 3, y + CELL - 3, 0xFF000000 | slotRgb(i));
-            if (i == 0) g.drawCenteredString(font, "E", x + CELL / 2 - 1, y + 4, 0xFF606060);
+            if (i == 0) g.centeredText(font, "E", x + CELL / 2 - 1, y + 4, 0xFF606060);
             if (i == CUSTOM) // rainbow strip marks the picker slot
                 for (int k = 0; k < CELL - 4; k++)
                     g.fill(x + 1 + k, y + 1, x + 2 + k, y + 4, 0xFF000000 | Mth.hsvToRgb(k / (float) (CELL - 4), 1, 1));
@@ -181,21 +184,21 @@ public class WhiteboardScreen extends Screen {
             g.fill(x + 1, y + 1, x + w - 1, y + CELL - 3, 0xFF000000 | Canvas.BOARD_RGB);
             int d = Math.min(CELL - 6, BRUSHES[i] * 2), cy = y + (CELL - 2) / 2;
             g.fill(x + 5, cy - d / 2, x + 5 + d, cy - d / 2 + Math.max(1, d), color == 0 ? 0xFF9A9A9A : 0xFF000000 | slotRgb(color));
-            g.drawString(font, String.valueOf(BRUSHES[i]), x + w - 10, y + 4, 0xFF505050, false);
+            g.text(font, String.valueOf(BRUSHES[i]), x + w - 10, y + 4, 0xFF505050, false);
         }
         renderBucketButton(g, brushX, tt + BRUSHES.length * CELL, 2 * CELL + 6);
 
         if (inCanvas(mx, my) && bucket) {
-            g.renderOutline(mx - 3, my - 3, 7, 7, 0x80000000);
+            g.outline(mx - 3, my - 3, 7, 7, 0x80000000);
         } else if (inCanvas(mx, my)) {
             int px = (int) ((mx - left) / scale) - (brush - 1) / 2, py = (int) ((my - top) / scale) - (brush - 1) / 2;
             int bs = Math.max(2, Math.round(brush * scale));
-            g.renderOutline(left + Math.round(px * scale), top + Math.round(py * scale), bs, bs, 0x80000000);
+            g.outline(left + Math.round(px * scale), top + Math.round(py * scale), bs, bs, 0x80000000);
         }
         if (picker) renderPicker(g, mx, my, partial);
     }
 
-    private void renderBucketButton(GuiGraphics g, int x, int y, int w) {
+    private void renderBucketButton(GuiGraphicsExtractor g, int x, int y, int w) {
         g.fill(x, y, x + w, y + CELL - 2, bucket ? 0xFFFFFFFF : 0xFF303030);
         g.fill(x + 1, y + 1, x + w - 1, y + CELL - 3, 0xFF000000 | Canvas.BOARD_RGB);
         int fill = color == 0 ? 0xFF9A9A9A : 0xFF000000 | slotRgb(color);
@@ -205,7 +208,7 @@ public class WhiteboardScreen extends Screen {
         g.fill(x + 5, y + 5, x + 11, y + 7, fill);
         g.fill(x + 11, y + 6, x + 14, y + 8, fill);
         g.fill(x + 13, y + 8, x + 15, y + 13, fill);
-        g.drawString(font, "Fill", x + w - 22, y + 4, 0xFF505050, false);
+        g.text(font, "Fill", x + w - 22, y + 4, 0xFF505050, false);
     }
 
     private int pickerW() {
@@ -216,9 +219,8 @@ public class WhiteboardScreen extends Screen {
         return PAD * 2 + SV + 26;
     }
 
-    private void renderPicker(GuiGraphics g, int mx, int my, float partial) {
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);
+    private void renderPicker(GuiGraphicsExtractor g, int mx, int my, float partial) {
+        g.nextStratum();
         int x = pickerX, y = pickerY;
         g.fill(x - 1, y - 1, x + pickerW() + 1, y + pickerH() + 1, 0xFF8A8F96);
         g.fill(x, y, x + pickerW(), y + pickerH(), 0xFF202226);
@@ -228,18 +230,17 @@ public class WhiteboardScreen extends Screen {
             g.fillGradient(sx + i, sy, sx + i + 1, sy + SV, top, 0xFF000000);
         }
         int cx = sx + Math.round(sat * (SV - 1)), cy = sy + Math.round((1 - val) * (SV - 1));
-        g.renderOutline(cx - 2, cy - 2, 5, 5, val > 0.5f ? 0xFF000000 : 0xFFFFFFFF);
+        g.outline(cx - 2, cy - 2, 5, 5, val > 0.5f ? 0xFF000000 : 0xFFFFFFFF);
         int hx = sx + SV + PAD;
         for (int j = 0; j < SV; j++) g.fill(hx, sy + j, hx + HUE_W, sy + j + 1, 0xFF000000 | Mth.hsvToRgb(j / (float) SV, 1, 1));
         int hy = sy + Math.round(hue * (SV - 1));
         g.fill(hx - 2, hy - 1, hx + HUE_W + 2, hy + 2, 0xFFFFFFFF);
         g.fill(hx, hy, hx + HUE_W, hy + 1, 0xFF000000 | Mth.hsvToRgb(hue, 1, 1));
-        g.drawString(font, "#", sx, sy + SV + 9, 0xFFAAAAAA, false);
-        hex.render(g, mx, my, partial);
+        g.text(font, "#", sx, sy + SV + 9, 0xFFAAAAAA, false);
+        hex.extractRenderState(g, mx, my, partial);
         int px = hex.getX() + hex.getWidth() + 6;
         g.fill(px, hex.getY(), x + pickerW() - PAD, hex.getY() + 14, 0xFFFFFFFF);
         g.fill(px + 1, hex.getY() + 1, x + pickerW() - PAD - 1, hex.getY() + 13, 0xFF000000 | customRgb());
-        g.pose().popPose();
     }
 
     private boolean inPicker(double mx, double my) {
@@ -267,9 +268,11 @@ public class WhiteboardScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (inPicker(mx, my)) {
-            if (hex.mouseClicked(mx, my, button)) {
+            if (hex.mouseClicked(event, doubleClick)) {
                 setFocused(hex);
                 return true;
             }
@@ -277,7 +280,7 @@ public class WhiteboardScreen extends Screen {
             pickerDrag = pickAt(mx, my, 0);
             return true;
         }
-        if (super.mouseClicked(mx, my, button)) return true;
+        if (super.mouseClicked(event, doubleClick)) return true;
         int tt = toolsTop();
         for (int i = 0; i <= CUSTOM; i++) {
             int x = paletteX + (i % 2) * CELL, y = tt + (i / 2) * CELL;
@@ -319,7 +322,8 @@ public class WhiteboardScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        double mx = event.x(), my = event.y();
         if (pickerDrag != 0) {
             pickAt(mx, my, pickerDrag);
             return true;
@@ -328,11 +332,12 @@ public class WhiteboardScreen extends Screen {
             stroke.add(pointAt(mx, my));
             return true;
         }
-        return super.mouseDragged(mx, my, button, dx, dy);
+        return super.mouseDragged(event, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(double mx, double my, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mx = event.x(), my = event.y();
         if (pickerDrag != 0) {
             pickerDrag = 0;
             return true;
@@ -343,21 +348,22 @@ public class WhiteboardScreen extends Screen {
             stroke = null;
             return true;
         }
-        return super.mouseReleased(mx, my, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean keyPressed(int key, int scan, int mods) {
-        if (picker && hex.isFocused() && key != GLFW.GLFW_KEY_ESCAPE) return hex.keyPressed(key, scan, mods) || true;
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
+        if (picker && hex.isFocused() && key != GLFW.GLFW_KEY_ESCAPE) return hex.keyPressed(event) || true;
         if (picker && key == GLFW.GLFW_KEY_ESCAPE) {
             togglePicker(false);
             return true;
         }
-        if (key == GLFW.GLFW_KEY_Z && hasControlDown() && !hasShiftDown()) {
+        if (key == GLFW.GLFW_KEY_Z && event.hasControlDown() && !event.hasShiftDown()) {
             UndoHistory.undo();
             return true;
         }
-        return super.keyPressed(key, scan, mods);
+        return super.keyPressed(event);
     }
 
     private int pointAt(double mx, double my) {
@@ -371,7 +377,7 @@ public class WhiteboardScreen extends Screen {
         Map<BlockPos, Drawing> before = new HashMap<>();
         Fill.fill(minecraft.level, board, ink, point, before, new ArrayList<>());
         UndoHistory.push(before);
-        PacketDistributor.sendToServer(new FillPayload(board, ink, point));
+        ClientPacketDistributor.sendToServer(new FillPayload(board, ink, point));
     }
 
     private void clearBoard() {
@@ -385,7 +391,7 @@ public class WhiteboardScreen extends Screen {
                 if (be.clear()) before.put(be.getBlockPos(), snap);
             }
         UndoHistory.push(before);
-        PacketDistributor.sendToServer(new ClearPayload(board));
+        ClientPacketDistributor.sendToServer(new ClearPayload(board));
     }
 
     @Override

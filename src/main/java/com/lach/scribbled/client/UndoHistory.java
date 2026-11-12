@@ -8,7 +8,7 @@ import java.util.Deque;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /** This player's recent strokes, newest first, as block snapshots to put back. */
 public final class UndoHistory {
@@ -29,7 +29,7 @@ public final class UndoHistory {
         if (step == null || level == null) return false;
         step.forEach((pos, drawing) -> {
             if (level.getBlockEntity(pos) instanceof WhiteboardBlockEntity be) be.restore(drawing);
-            PacketDistributor.sendToServer(new RestorePayload(pos, drawing));
+            ClientPacketDistributor.sendToServer(new RestorePayload(pos, drawing));
         });
         return true;
     }

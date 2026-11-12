@@ -5,7 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -147,20 +150,20 @@ public class WhiteboardBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putByteArray("pixels", pixels);
-        tag.putIntArray("palette", palette);
-        tag.putBoolean("glowing", glowing);
+    protected void saveAdditional(ValueOutput out) {
+        super.saveAdditional(out);
+        out.store("pixels", Drawing.BYTES, pixels);
+        out.putIntArray("palette", palette);
+        out.putBoolean("glowing", glowing);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("pixels")) pixels = Arrays.copyOf(tag.getByteArray("pixels"), Canvas.AREA);
-        int[] pal = tag.getIntArray("palette");
+    protected void loadAdditional(ValueInput in) {
+        super.loadAdditional(in);
+        in.read("pixels", Drawing.BYTES).ifPresent(px -> pixels = Arrays.copyOf(px, Canvas.AREA));
+        int[] pal = in.getIntArray("palette").orElse(new int[0]);
         palette = Arrays.copyOf(pal, Math.min(pal.length, Canvas.MAX_CUSTOM));
-        glowing = tag.getBoolean("glowing");
+        glowing = in.getBooleanOr("glowing", false);
         version++;
     }
 
@@ -181,7 +184,7 @@ public class WhiteboardBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void applyImplicitComponents(BlockEntity.DataComponentInput input) {
+    protected void applyImplicitComponents(DataComponentGetter input) {
         super.applyImplicitComponents(input);
         Drawing d = input.get(Scribbled.DRAWING.get());
         if (d != null) {
@@ -193,14 +196,14 @@ public class WhiteboardBlockEntity extends BlockEntity {
 
     @Override
     @SuppressWarnings("deprecation")
-    public void removeComponentsFromTag(CompoundTag tag) {
-        tag.remove("pixels");
-        tag.remove("palette");
+    public void removeComponentsFromTag(ValueOutput out) {
+        out.discard("pixels");
+        out.discard("palette");
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        if (level != null && level.isClientSide) ClientHooks.release(this);
+        if (level != null && level.isClientSide()) ClientHooks.release(this);
     }
 }

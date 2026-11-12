@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
  * One continuous stroke on a board: paints locally for instant feedback, batches points to the server,
@@ -57,7 +57,7 @@ public final class StrokeSession {
 
     public void flush() {
         if (pending.isEmpty() || continued && pending.size() == 1 || Minecraft.getInstance().getConnection() == null) return;
-        PacketDistributor.sendToServer(new PaintPayload(board, ink, size, List.copyOf(pending)));
+        ClientPacketDistributor.sendToServer(new PaintPayload(board, ink, size, List.copyOf(pending)));
         pending.clear();
         pending.add(last);
         continued = true;
